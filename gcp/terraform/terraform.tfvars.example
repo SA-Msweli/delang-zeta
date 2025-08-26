@@ -1,0 +1,14 @@
+# DeLangZeta Terraform Configuration Variables
+# Copy this file to terraform.tfvars and update with your values
+
+# Google Cloud Project ID
+project_id = "your-project-id"
+
+# Google Cloud Region
+region = "us-central1"
+
+# Environment (dev, staging, prod)
+environment = "dev"
+
+# Email for monitoring alerts (optional)
+alert_email = "admin@example.com"

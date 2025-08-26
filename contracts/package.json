@@ -1,0 +1,19 @@
+{
+  "name": "delang-zeta-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for DeLangZeta platform",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js",
+    "verify": "hardhat verify"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "^5.4.0",
+    "@zetachain/protocol-contracts": "^8.0.0",
+    "chai": "^4.3.10",
+    "ethers": "^6.8.0",
+    "hardhat": "^2.19.0"
+  }
+}

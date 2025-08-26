@@ -1,0 +1,43 @@
+{
+  "name": "delang-storage-function",
+  "version": "1.0.0",
+  "description": "Secure file storage Cloud Functions for DeLangZeta",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "functions-framework --target=storageHandler --source=dist",
+    "deploy:upload": "gcloud functions deploy storage-upload --runtime nodejs18 --trigger http --entry-point uploadHandler",
+    "deploy:download": "gcloud functions deploy storage-download --runtime nodejs18 --trigger http --entry-point downloadHandler",
+    "deploy:metadata": "gcloud functions deploy storage-metadata --runtime nodejs18 --trigger http --entry-point metadataHandler",
+    "deploy:enhanced-access": "gcloud functions deploy storage-enhanced-access --runtime nodejs18 --trigger http --entry-point enhancedAccessHandler",
+    "deploy:create-share": "gcloud functions deploy storage-create-share --runtime nodejs18 --trigger http --entry-point createShareLinkHandler",
+    "deploy:share-access": "gcloud functions deploy storage-share-access --runtime nodejs18 --trigger http --entry-point shareAccessHandler --allow-unauthenticated",
+    "deploy:manage-sharing": "gcloud functions deploy storage-manage-sharing --runtime nodejs18 --trigger http --entry-point manageSharingHandler",
+    "deploy:all": "npm run deploy:upload && npm run deploy:download && npm run deploy:metadata && npm run deploy:enhanced-access && npm run deploy:create-share && npm run deploy:share-access && npm run deploy:manage-sharing",
+    "test": "vitest --run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.3.0",
+    "@google-cloud/storage": "^7.7.0",
+    "@google-cloud/secret-manager": "^5.0.1",
+    "@google-cloud/kms": "^4.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.1",
+    "mime-types": "^2.1.35"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.11",
+    "@types/uuid": "^9.0.8",
+    "@types/mime-types": "^2.1.4",
+    "typescript": "^5.4.3",
+    "vitest": "^1.4.0"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "delang-auth-function",
+  "version": "1.0.0",
+  "description": "Authentication Cloud Function for DeLangZeta",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "functions-framework --target=authHandler --source=dist",
+    "deploy": "gcloud functions deploy auth-function --runtime nodejs18 --trigger http",
+    "test": "vitest --run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.3.0",
+    "@google-cloud/secret-manager": "^5.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "ethers": "^6.11.1",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "typescript": "^5.4.3",
+    "vitest": "^1.4.0"
+  }
+}

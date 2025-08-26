@@ -1,0 +1,135 @@
+# Google Cloud Build configuration for DeLangZeta
+steps:
+  # Set up Google Cloud Storage infrastructure
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:latest"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        # Make setup script executable
+        chmod +x gcp/storage-setup.sh
+        # Run storage setup
+        ./gcp/storage-setup.sh
+    env:
+      - "GOOGLE_CLOUD_PROJECT=$PROJECT_ID"
+      - "REGION=us-central1"
+      - "ALERT_EMAIL=${_ALERT_EMAIL}"
+
+  # Build and test authentication functions
+  - name: "node:18"
+    dir: "functions/auth"
+    entrypoint: "npm"
+    args: ["install"]
+
+  - name: "node:18"
+    dir: "functions/auth"
+    entrypoint: "npm"
+    args: ["run", "build"]
+
+  - name: "node:18"
+    dir: "functions/auth"
+    entrypoint: "npm"
+    args: ["test"]
+
+  # Build and test storage functions
+  - name: "node:18"
+    dir: "functions/storage"
+    entrypoint: "npm"
+    args: ["install"]
+
+  - name: "node:18"
+    dir: "functions/storage"
+    entrypoint: "npm"
+    args: ["run", "build"]
+
+  - name: "node:18"
+    dir: "functions/storage"
+    entrypoint: "npm"
+    args: ["test"]
+
+  # Deploy storage Cloud Functions
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:latest"
+    dir: "functions/storage"
+    entrypoint: "gcloud"
+    args:
+      - "functions"
+      - "deploy"
+      - "storage-upload"
+      - "--runtime=nodejs18"
+      - "--trigger=http"
+      - "--entry-point=uploadHandler"
+      - "--service-account=delang-functions-sa@$PROJECT_ID.iam.gserviceaccount.com"
+      - "--set-env-vars=NODE_ENV=production"
+      - "--memory=512MB"
+      - "--timeout=60s"
+      - "--max-instances=100"
+      - "--source=."
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:latest"
+    dir: "functions/storage"
+    entrypoint: "gcloud"
+    args:
+      - "functions"
+      - "deploy"
+      - "storage-download"
+      - "--runtime=nodejs18"
+      - "--trigger=http"
+      - "--entry-point=downloadHandler"
+      - "--service-account=delang-functions-sa@$PROJECT_ID.iam.gserviceaccount.com"
+      - "--set-env-vars=NODE_ENV=production"
+      - "--memory=512MB"
+      - "--timeout=60s"
+      - "--max-instances=100"
+      - "--source=."
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:latest"
+    dir: "functions/storage"
+    entrypoint: "gcloud"
+    args:
+      - "functions"
+      - "deploy"
+      - "storage-metadata"
+      - "--runtime=nodejs18"
+      - "--trigger=http"
+      - "--entry-point=metadataHandler"
+      - "--service-account=delang-functions-sa@$PROJECT_ID.iam.gserviceaccount.com"
+      - "--set-env-vars=NODE_ENV=production"
+      - "--memory=512MB"
+      - "--timeout=60s"
+      - "--max-instances=100"
+      - "--source=."
+
+  # Deploy existing auth Cloud Functions
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "gcloud"
+    args:
+      - "functions"
+      - "deploy"
+      - "auth-function"
+      - "--source=./functions/auth"
+      - "--runtime=nodejs18"
+      - "--trigger=http"
+      - "--allow-unauthenticated"
+      - "--region=us-central1"
+
+  # Deploy additional Cloud Functions (tasks, files, rewards, etc.)
+  # Note: Add specific function deployments as they are created
+
+  # Build the React application
+  - name: "node:18"
+    entrypoint: "npm"
+    args: ["install"]
+    dir: "."
+
+  - name: "node:18"
+    entrypoint: "npm"
+    args: ["run", "build"]
+    dir: "."
+
+# Substitutions for environment variables
+substitutions:
+  _ALERT_EMAIL: "admin@delang-zeta.com"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: "E2_HIGHCPU_8"
