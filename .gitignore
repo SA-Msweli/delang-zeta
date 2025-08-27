@@ -124,3 +124,167 @@ dist-ssr
 
 # Local development
 .local/
+
+# ===== DELANGZETA SPECIFIC =====
+
+# Deployment artifacts and reports
+deployment-summary.md
+security-test-report.md
+load-test-report.md
+deployment-validation-report.md
+final-deployment-report.md
+deployment-info.json
+
+# Sensitive configuration files
+.env.production
+.env.staging
+config/production.json
+config/staging.json
+
+# Private keys and secrets (CRITICAL - NEVER COMMIT)
+*.pem
+*.key
+*.p12
+*.pfx
+private-keys/
+secrets/
+.secrets/
+wallet-keys/
+mnemonic.txt
+seed-phrase.txt
+
+# Google Cloud specific
+gcp-key.json
+service-account*.json
+*-service-account.json
+google-credentials.json
+.gcp/
+gcp/keys/
+gcp/credentials/
+
+# Secret Manager exports
+secret-*.txt
+secrets-export/
+.secret-manager/
+
+# ZetaChain and blockchain
+.zetachain/
+zetachain-key.txt
+private-key.txt
+wallet.json
+keystore/
+.hardhat/
+hardhat-shorthand.json
+
+# AI API keys and credentials
+gemini-api-key.txt
+openai-api-key.txt
+google-ai-key.txt
+translate-api-key.txt
+speech-api-key.txt
+
+# Database credentials
+database.json
+db-credentials.json
+connection-string.txt
+
+# Backup files
+*.backup
+*.bak
+backup/
+backups/
+
+# Temporary deployment files
+temp-deployment/
+.deployment-temp/
+deployment-*.tmp
+
+# Load testing results
+load-test-results/
+performance-logs/
+.load-test/
+
+# Security scan results
+security-scan-results/
+vulnerability-reports/
+.security/
+
+# Local configuration overrides
+local.config.js
+local.config.json
+config.local.*
+
+# IDE and editor specific (additional)
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.code-workspace
+
+# Python virtual environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# Python AI function specific
+functions/ai/__pycache__/
+functions/ai/.pytest_cache/
+functions/ai/venv/
+functions/ai/.env
+
+# Node.js function specific
+functions/*/package-lock.json.bak
+functions/*/.env
+functions/*/local.json
+
+# Contract deployment artifacts
+contracts/deployments/localhost/
+contracts/deployments/hardhat/
+contracts/broadcast/
+contracts/out/
+contracts/.env
+
+# Monitoring and logging
+logs/
+*.log.*
+monitoring-data/
+metrics/
+
+# Certificates and SSL
+*.crt
+*.cert
+*.ca-bundle
+ssl/
+certificates/
+
+# Docker (if used)
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# Kubernetes (if used)
+k8s/secrets/
+*.kubeconfig
+
+# Terraform state (additional)
+terraform.tfvars
+*.auto.tfvars
+.terraform.tfvars
+
+# Local testing data
+test-data/
+mock-data/
+sample-uploads/
+test-files/
+
+# Performance profiling
+*.prof
+profiling/
+.profiling/
+
+# Miscellaneous sensitive files
+TODO-PRIVATE.md
+NOTES-PRIVATE.md
+SECRETS.md
+PRIVATE-*.md

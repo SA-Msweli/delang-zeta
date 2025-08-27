@@ -139,3 +139,16 @@ export class TokenManager {
     }
   }
 }
+
+// Export static methods as instance-like object
+export const tokenManager = {
+  getAccessToken: () => TokenManager.getAccessToken(),
+  getRefreshToken: () => TokenManager.getRefreshToken(),
+  getTokenExpiry: () => TokenManager.getTokenExpiry(),
+  hasValidTokens: () => TokenManager.hasValidTokens(),
+  shouldRefreshToken: () => TokenManager.shouldRefreshToken(),
+  setTokens: (tokens: AuthTokens) => TokenManager.setTokens(tokens),
+  clearTokens: () => TokenManager.clearTokens(),
+  updateAccessToken: (accessToken: string, expiresIn: number) => TokenManager.updateAccessToken(accessToken, expiresIn),
+  getTokens: () => TokenManager.getTokens()
+}

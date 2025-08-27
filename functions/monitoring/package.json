@@ -1,0 +1,42 @@
+{
+  "name": "delang-zeta-monitoring",
+  "version": "1.0.0",
+  "description": "DeLangZeta Monitoring and Alerting Cloud Functions",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deploy": "npm run build && gcloud functions deploy",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.3.0",
+    "@google-cloud/firestore": "^7.1.0",
+    "@google-cloud/monitoring": "^4.0.0",
+    "@google-cloud/logging": "^11.0.0",
+    "@google-cloud/secret-manager": "^5.0.1",
+    "@google-cloud/pubsub": "^4.0.7",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/cors": "^2.8.14",
+    "@types/express": "^4.17.18",
+    "@types/jsonwebtoken": "^9.0.3",
+    "@types/node-cron": "^3.0.8",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.50.0",
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6"
+  },
+  "engines": {
+    "node": "18"
+  }
+}

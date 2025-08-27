@@ -5,7 +5,6 @@ import {
   FileText,
   ShoppingBag,
   User,
-  Upload,
   CheckCircle,
   TrendingUp,
   Vote,
@@ -16,8 +15,7 @@ import { NetworkSwitcher } from './wallet/NetworkSwitcher'
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Tasks', href: '/tasks', icon: FileText },
-  { name: 'Contribute', href: '/contribute', icon: Upload },
-  { name: 'Validate', href: '/validate', icon: CheckCircle },
+  { name: 'Validate', href: '/validation', icon: CheckCircle },
   { name: 'Marketplace', href: '/marketplace', icon: ShoppingBag },
   { name: 'Analytics', href: '/analytics', icon: TrendingUp },
   { name: 'Governance', href: '/governance', icon: Vote },

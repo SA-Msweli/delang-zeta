@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { Navigate } from 'react-router-dom'
 import { Search, Filter, Plus } from 'lucide-react'
+import { TaskCreationForm } from '../components/TaskCreationForm'
 
 export function TasksPage() {
   const { isConnected } = useAccount()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
+  const [showCreateForm, setShowCreateForm] = useState(false)
 
   if (!isConnected) {
     return <Navigate to="/" replace />
@@ -62,7 +64,10 @@ export function TasksPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Tasks</h1>
           <p className="text-gray-600">Browse and contribute to language data collection tasks</p>
         </div>
-        <button className="btn-primary mt-4 lg:mt-0 flex items-center">
+        <button
+          onClick={() => setShowCreateForm(true)}
+          className="btn-primary mt-4 lg:mt-0 flex items-center"
+        >
           <Plus className="h-5 w-5 mr-2" />
           Create Task
         </button>
@@ -124,7 +129,10 @@ export function TasksPage() {
                     style={{ width: `${(task.submissions / task.maxSubmissions) * 100}%` }}
                   ></div>
                 </div>
-                <button className="btn-primary w-full lg:w-auto">
+                <button
+                  onClick={() => window.location.href = `/tasks/${task.id}/submit`}
+                  className="btn-primary w-full lg:w-auto"
+                >
                   Contribute
                 </button>
               </div>
@@ -136,6 +144,21 @@ export function TasksPage() {
       {filteredTasks.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No tasks found matching your criteria.</p>
+        </div>
+      )}
+
+      {/* Task Creation Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <TaskCreationForm
+              onSuccess={() => {
+                setShowCreateForm(false)
+                // Refresh tasks list in a real implementation
+              }}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          </div>
         </div>
       )}
     </div>

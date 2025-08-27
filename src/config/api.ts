@@ -1,6 +1,9 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { toast } from 'react-hot-toast'
 import { TokenManager } from '../services/tokenManager'
+import { SecurityHeaders, InputValidator, CSRFProtection } from '../utils/security'
+import { DDoSProtectionService } from '../services/ddosProtection'
+import { SecurityMonitoringService, SecurityEventType, SecuritySeverity } from '../services/securityMonitoring'
 
 // Cloud Functions configuration - single source of truth
 export const CLOUD_FUNCTIONS_URL = import.meta.env.VITE_CLOUD_FUNCTIONS_URL || 'https://us-central1-delang-zeta.cloudfunctions.net'
@@ -31,29 +34,123 @@ class SecureHttpClient {
   }
 
   private setupInterceptors() {
-    // Request interceptor to add auth token
+    // Request interceptor to add auth token and security headers
     this.client.interceptors.request.use(
-      (config) => {
+      async (config) => {
+        const startTime = Date.now()
+        const action = this.getActionFromUrl(config.url || '')
+        const endpoint = config.url || ''
+
+        // Check DDoS protection
+        const ddosCheck = await DDoSProtectionService.checkRequest(action, endpoint)
+        if (!ddosCheck.allowed) {
+          SecurityMonitoringService.logEvent(
+            SecurityEventType.DDOS_ATTACK,
+            {
+              action,
+              endpoint,
+              reason: ddosCheck.reason,
+              threatLevel: ddosCheck.threatLevel
+            },
+            SecuritySeverity.HIGH
+          )
+          throw new Error(ddosCheck.reason || 'Request blocked')
+        }
+
+        // Add authentication token
         const token = TokenManager.getAccessToken()
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
         }
 
+        // Add security headers
+        Object.assign(config.headers, SecurityHeaders.getSecurityHeaders())
+
         // Add request ID for tracking
         config.headers['X-Request-ID'] = this.generateRequestId()
+
+        // Sanitize request data
+        if (config.data) {
+          config.data = InputValidator.sanitizeInput(config.data)
+        }
+
+        // Store request start time for metrics
+        ; (config as any).metadata = { startTime, action, endpoint }
 
         return config
       },
       (error) => {
+        SecurityMonitoringService.logEvent(
+          SecurityEventType.API_ABUSE,
+          { error: error.message },
+          SecuritySeverity.MEDIUM
+        )
         return Promise.reject(error)
       }
     )
 
     // Response interceptor for error handling and token refresh
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        // Record successful request metrics
+        const config = response.config as any
+        if (config.metadata) {
+          const responseTime = Date.now() - config.metadata.startTime
+          DDoSProtectionService.recordRequest(
+            config.metadata.action,
+            config.metadata.endpoint,
+            responseTime,
+            true
+          )
+        }
+        return response
+      },
       async (error) => {
         const originalRequest = error.config
+
+        // Record failed request metrics
+        if (originalRequest?.metadata) {
+          const responseTime = Date.now() - originalRequest.metadata.startTime
+          DDoSProtectionService.recordRequest(
+            originalRequest.metadata.action,
+            originalRequest.metadata.endpoint,
+            responseTime,
+            false
+          )
+        }
+
+        // Log security events for various error types
+        if (error.response?.status === 401) {
+          SecurityMonitoringService.logEvent(
+            SecurityEventType.AUTHENTICATION_FAILURE,
+            {
+              url: originalRequest?.url,
+              status: error.response.status,
+              message: error.response.data?.error
+            },
+            SecuritySeverity.MEDIUM
+          )
+        } else if (error.response?.status === 403) {
+          SecurityMonitoringService.logEvent(
+            SecurityEventType.AUTHORIZATION_DENIED,
+            {
+              url: originalRequest?.url,
+              status: error.response.status,
+              message: error.response.data?.error
+            },
+            SecuritySeverity.MEDIUM
+          )
+        } else if (error.response?.status === 429) {
+          SecurityMonitoringService.logEvent(
+            SecurityEventType.RATE_LIMIT_EXCEEDED,
+            {
+              url: originalRequest?.url,
+              status: error.response.status,
+              retryAfter: error.response.headers['retry-after']
+            },
+            SecuritySeverity.HIGH
+          )
+        }
 
         // Handle 401 errors with token refresh
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -151,6 +248,13 @@ class SecureHttpClient {
 
   private generateRequestId(): string {
     return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }
+
+  private getActionFromUrl(url: string): string {
+    // Extract action from URL for rate limiting and monitoring
+    const path = url.replace(this.client.defaults.baseURL || '', '')
+    const segments = path.split('/').filter(Boolean)
+    return segments[0] || 'unknown'
   }
 
   // Retry logic for failed requests

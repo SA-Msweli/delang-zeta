@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast'
 import App from './App.tsx'
 import { wagmiConfig } from './config/wagmi.ts'
 import { AuthProvider } from './contexts/AuthContext.tsx'
+import { registerPWA } from './utils/pwa.ts'
 import './index.css'
 
 import '@rainbow-me/rainbowkit/styles.css'
@@ -21,6 +22,13 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+// Register PWA service worker
+registerPWA().then(() => {
+  console.log('PWA service worker registered');
+}).catch((error) => {
+  console.error('PWA service worker registration failed:', error);
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

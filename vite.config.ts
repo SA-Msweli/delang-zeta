@@ -13,6 +13,24 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
+  build: {
+    // Ensure service worker is included in build
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        sw: path.resolve(__dirname, 'public/sw.js')
+      },
+      output: {
+        entryFileNames: (chunkInfo) => {
+          return chunkInfo.name === 'sw' ? 'sw.js' : '[name]-[hash].js';
+        }
+      }
+    }
+  },
+  server: {
+    // Enable HTTPS for PWA testing in development
+    https: false, // Set to true for local HTTPS testing
+  },
   test: {
     globals: true,
     environment: 'jsdom',

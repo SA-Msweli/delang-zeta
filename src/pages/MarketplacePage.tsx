@@ -1,158 +1,313 @@
-import { useState } from 'react'
-import { Search, Filter, Download, Star } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import {
+  TrendingUp,
+  Star,
+  Database,
+  Users,
+  DollarSign,
+  Eye,
+  Loader2
+} from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import { useMarketplace } from '../hooks/useMarketplace'
+import { useAuth } from '../contexts/AuthContext'
+import { DatasetCard } from '../components/DatasetCard'
+import { DatasetFilters } from '../components/DatasetFilters'
+import { DatasetPreviewModal } from '../components/DatasetPreviewModal'
+import { DatasetPurchaseModal } from '../components/DatasetPurchaseModal'
+import type { Dataset } from '../types/dataset'
 
 export function MarketplacePage() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const { isAuthenticated } = useAuth()
+  const {
+    searchResults,
+    trendingDatasets,
+    recommendedDatasets,
+    marketplaceStats,
+    filters,
+    isSearching,
+    isTrendingLoading,
+    isRecommendedLoading,
+    isStatsLoading,
+    updateFilters,
+    resetFilters,
+    loadMore,
+    hasMore,
+    totalResults,
+    currentPage
+  } = useMarketplace()
 
-  const datasets = [
-    {
-      id: '1',
-      title: 'English Conversational Dataset',
-      description: 'High-quality English conversations for chatbot training with 10K+ verified interactions',
-      language: 'English',
-      category: 'Conversational',
-      size: '2.5 GB',
-      samples: 10500,
-      rating: 4.8,
-      price: '0.1 ETH',
-      downloads: 234,
-      verified: true
-    },
-    {
-      id: '2',
-      title: 'Spanish Technical Documentation',
-      description: 'Professional Spanish technical documentation dataset for domain-specific language models',
-      language: 'Spanish',
-      category: 'Technical',
-      size: '1.8 GB',
-      samples: 7800,
-      rating: 4.6,
-      price: '150 USDC',
-      downloads: 89,
-      verified: true
-    },
-    {
-      id: '3',
-      title: 'Multilingual Audio Transcriptions',
-      description: 'Audio transcriptions in 12 languages with high accuracy for speech recognition training',
-      language: 'Multiple',
-      category: 'Audio',
-      size: '5.2 GB',
-      samples: 25000,
-      rating: 4.9,
-      price: '0.05 BTC',
-      downloads: 456,
-      verified: true
+  const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [activeTab, setActiveTab] = useState<'all' | 'trending' | 'recommended'>('all')
+
+  // Handle infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop
+        >= document.documentElement.offsetHeight - 1000
+      ) {
+        if (hasMore && !isSearching && activeTab === 'all') {
+          loadMore()
+        }
+      }
     }
-  ]
 
-  const filteredDatasets = datasets.filter(dataset => {
-    const matchesSearch = dataset.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      dataset.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === 'all' || dataset.category.toLowerCase() === selectedCategory
-    return matchesSearch && matchesCategory
-  })
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [hasMore, isSearching, loadMore, activeTab])
+
+  const handlePreview = (dataset: Dataset) => {
+    setSelectedDataset(dataset)
+    setShowPreviewModal(true)
+  }
+
+  const handlePurchase = (dataset: Dataset) => {
+    if (!isAuthenticated) {
+      toast.error('Please connect your wallet to purchase datasets')
+      return
+    }
+    setSelectedDataset(dataset)
+    setShowPurchaseModal(true)
+  }
+
+  const handlePurchaseSuccess = (_licenseId: string) => {
+    toast.success('Dataset purchased successfully!')
+    setShowPurchaseModal(false)
+    setSelectedDataset(null)
+  }
+
+  const getDisplayDatasets = () => {
+    switch (activeTab) {
+      case 'trending':
+        return trendingDatasets || []
+      case 'recommended':
+        return recommendedDatasets || []
+      default:
+        return searchResults?.datasets || []
+    }
+  }
+
+  const getLoadingState = () => {
+    switch (activeTab) {
+      case 'trending':
+        return isTrendingLoading
+      case 'recommended':
+        return isRecommendedLoading
+      default:
+        return isSearching
+    }
+  }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Data Marketplace</h1>
-        <p className="text-gray-600">Discover and license high-quality language datasets for your AI projects</p>
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Data Marketplace</h1>
+        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          Discover and license high-quality language datasets for your AI projects.
+          Browse verified datasets from contributors worldwide.
+        </p>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search datasets..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-field pl-10"
-          />
+      {/* Stats Overview */}
+      {marketplaceStats && !isStatsLoading && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <Database className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-900">
+              {marketplaceStats.totalDatasets.toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-500">Total Datasets</div>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <Eye className="h-8 w-8 text-green-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-900">
+              {marketplaceStats.totalDownloads.toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-500">Total Downloads</div>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <DollarSign className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-900">
+              ${parseFloat(marketplaceStats.totalRevenue).toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-500">Total Revenue</div>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <Star className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-900">
+              {marketplaceStats.averageRating.toFixed(1)}
+            </div>
+            <div className="text-sm text-gray-500">Average Rating</div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-gray-400" />
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="input-field w-auto"
+      )}
+
+      {/* Navigation Tabs */}
+      <div className="flex items-center justify-center">
+        <div className="flex bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'all'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+              }`}
           >
-            <option value="all">All Categories</option>
-            <option value="conversational">Conversational</option>
-            <option value="technical">Technical</option>
-            <option value="audio">Audio</option>
-            <option value="creative">Creative</option>
-          </select>
+            All Datasets
+            {totalResults > 0 && (
+              <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
+                {totalResults.toLocaleString()}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('trending')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${activeTab === 'trending'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+              }`}
+          >
+            <TrendingUp className="h-4 w-4" />
+            Trending
+          </button>
+          {isAuthenticated && (
+            <button
+              onClick={() => setActiveTab('recommended')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${activeTab === 'recommended'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              <Users className="h-4 w-4" />
+              Recommended
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Datasets Grid */}
-      <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredDatasets.map((dataset) => (
-          <div key={dataset.id} className="card hover:shadow-lg transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                  {dataset.language}
-                </span>
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                  {dataset.category}
-                </span>
-                {dataset.verified && (
-                  <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
-                    Verified
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                <span className="text-sm font-medium">{dataset.rating}</span>
-              </div>
-            </div>
+      {/* Filters - Only show for 'all' tab */}
+      {activeTab === 'all' && (
+        <DatasetFilters
+          filters={filters}
+          onFiltersChange={updateFilters}
+          onReset={resetFilters}
+          facets={searchResults?.facets}
+        />
+      )}
 
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{dataset.title}</h3>
-            <p className="text-gray-600 mb-4 line-clamp-3">{dataset.description}</p>
-
-            <div className="space-y-2 mb-4 text-sm text-gray-500">
-              <div className="flex justify-between">
-                <span>Size:</span>
-                <span className="font-medium text-gray-900">{dataset.size}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Samples:</span>
-                <span className="font-medium text-gray-900">{dataset.samples.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Downloads:</span>
-                <span className="font-medium text-gray-900">{dataset.downloads}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-              <div>
-                <span className="text-2xl font-bold text-gray-900">{dataset.price}</span>
-              </div>
-              <div className="flex gap-2">
-                <button className="btn-secondary text-sm flex items-center">
-                  <Download className="h-4 w-4 mr-1" />
-                  Preview
-                </button>
-                <button className="btn-primary text-sm">
-                  License
-                </button>
-              </div>
+      {/* Results */}
+      <div>
+        {/* Loading State */}
+        {getLoadingState() && currentPage === 1 && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-500">Loading datasets...</p>
             </div>
           </div>
-        ))}
+        )}
+
+        {/* Datasets Grid */}
+        {!getLoadingState() && getDisplayDatasets().length > 0 && (
+          <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {getDisplayDatasets().map((dataset) => (
+              <DatasetCard
+                key={dataset.id}
+                dataset={dataset}
+                onPreview={handlePreview}
+                onPurchase={handlePurchase}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Load More Button */}
+        {activeTab === 'all' && hasMore && !isSearching && searchResults?.datasets && searchResults.datasets.length > 0 && (
+          <div className="text-center mt-8">
+            <button
+              onClick={loadMore}
+              disabled={isSearching}
+              className="btn-secondary flex items-center gap-2 mx-auto"
+            >
+              {isSearching ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  Load More Datasets
+                  <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
+                    {searchResults.datasets.length} of {totalResults}
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!getLoadingState() && getDisplayDatasets().length === 0 && (
+          <div className="text-center py-12">
+            <Database className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {activeTab === 'all' && filters.search
+                ? 'No datasets found'
+                : activeTab === 'trending'
+                  ? 'No trending datasets'
+                  : activeTab === 'recommended'
+                    ? 'No recommendations available'
+                    : 'No datasets available'
+              }
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {activeTab === 'all' && filters.search
+                ? 'Try adjusting your search criteria or filters'
+                : activeTab === 'trending'
+                  ? 'Check back later for trending datasets'
+                  : activeTab === 'recommended'
+                    ? 'Browse datasets to get personalized recommendations'
+                    : 'Datasets will appear here once they are available'
+              }
+            </p>
+            {activeTab === 'all' && (filters.search || Object.keys(filters).length > 2) && (
+              <button
+                onClick={resetFilters}
+                className="btn-secondary"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {filteredDatasets.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No datasets found matching your criteria.</p>
-        </div>
+      {/* Modals */}
+      {selectedDataset && (
+        <>
+          <DatasetPreviewModal
+            dataset={selectedDataset}
+            isOpen={showPreviewModal}
+            onClose={() => {
+              setShowPreviewModal(false)
+              setSelectedDataset(null)
+            }}
+            onPurchase={handlePurchase}
+          />
+
+          <DatasetPurchaseModal
+            dataset={selectedDataset}
+            isOpen={showPurchaseModal}
+            onClose={() => {
+              setShowPurchaseModal(false)
+              setSelectedDataset(null)
+            }}
+            onSuccess={handlePurchaseSuccess}
+          />
+        </>
       )}
     </div>
   )
